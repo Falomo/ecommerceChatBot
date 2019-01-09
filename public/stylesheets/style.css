@@ -1,0 +1,9 @@
+.card img {
+  max-height: 200px;
+}
+
+.pricing{
+  display: flex;
+  flex-flow: row;
+  justify-content: space-between;
+}
