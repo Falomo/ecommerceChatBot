@@ -16,8 +16,22 @@ var expressHbs = require('express-handlebars');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
+
+
 var app = express();
 
+
+var knex = require('knex')({
+  client: 'mysql',
+  connection: {
+    host : '127.0.0.1',
+    user : 'root',
+    password : '',
+    database : 'products'
+  }
+});
+
+knex.select('*').from('products').then( data => console.log(data))
 
 
 //MONGO DB CONNECTION

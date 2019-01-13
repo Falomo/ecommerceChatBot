@@ -10,19 +10,22 @@ let products = [
         imagePath: '/images/image1.jpg',
         Name: 'Playstation 4',
         Desc: 'This is a very cool game',
-        Price: 300
+        Price: 300,
+        Keyword: 'playstation'
     }),
     new Product({
         imagePath: '/images/image2.jpg',
         Name: 'Television',
         Desc: 'This is a very cool tv',
-        Price: 200
+        Price: 200,
+        Keyword: 'television'
     }),
     new Product({
         imagePath: '/images/image3.jpg',
         Name: 'Cloth',
         Desc: 'This is a very cool cloth',
-        Price: 500
+        Price: 500,
+        Keyword: 'cloth'
     }),
 
 ];
