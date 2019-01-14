@@ -9,36 +9,63 @@ const wit = new Wit('NB7ZCS6F7ZLFBM2HCWZYNYBNJ3D5IPDJ');
 const axios = require('axios');
 const apiai = require('apiai');
 
+const knex = require('../configs/knex-config');
+
 const app = apiai("7624ecc172844ed8986d4d575fe7fe62");
 
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
-  Product.find((err, docs) => {
-    let productChunk = [];
-    let chunkSize = 3;
-    for (let i = 0; i < docs.length; i += chunkSize) {
-      productChunk.push(docs.splice(i, i + chunkSize));
-    }
-    res.render('shop/index', {
-      title: 'Shopping Cart',
-      products: productChunk
-    });
-  })
+  knex.select('*').from('products')
+    .then((data, err) => {
+      let productChunk = [];
+      let chunkSize = 3;
+      for (let i = 0; i < data.length; i += chunkSize) {
+        productChunk.push(data.splice(i, i + chunkSize));
+      }
+      console.log(productChunk)
+      res.render('shop/index', {
+        title: 'Shopping Cart',
+        products: productChunk
+      });
+
+    })
+
+  // Product.find((err, docs) => {
+  //   let productChunk = [];
+  //   let chunkSize = 3;
+  //   for (let i = 0; i < docs.length; i += chunkSize) {
+  //     productChunk.push(docs.splice(i, i + chunkSize));
+  //   }
+  //   res.render('shop/index', {
+  //     title: 'Shopping Cart',
+  //     products: productChunk
+  //   });
+  // })
 });
 
 router.get('/add-to-cart/:id', (req, res, next) => {
   let productId = req.params.id;
   let cart = new Cart(req.session.cart ? req.session.cart : {});
 
-  Product.findById(productId, (err, product) => {
-    if (err)
-      return res.redirect('/');
-    cart.add(product, product.id);
-    req.session.cart = cart;
-    console.log(req.session.cart);
-    res.redirect('/');
-  })
+  knex.select('*').from('products').where({ ProductID: productId })
+    .then( (data, err) => {
+      let product = data[0];
+      if (err)
+        return res.redirect('/');
+      cart.add(product, product['ProductID']);
+      req.session.cart = cart;
+      console.log(req.session.cart);
+      res.redirect('/');
+    });
+  // Product.findById(productId, (err, product) => {
+  //   if (err)
+  //     return res.redirect('/');
+  //   cart.add(product, product.id);
+  //   req.session.cart = cart;
+  //   console.log(req.session.cart);
+  //   res.redirect('/');
+  // })
 });
 
 router.get('/shopping-cart', (req, res, next) => {

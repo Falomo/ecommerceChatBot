@@ -21,17 +21,19 @@ var usersRouter = require('./routes/users');
 var app = express();
 
 
-var knex = require('knex')({
-  client: 'mysql',
-  connection: {
-    host : '127.0.0.1',
-    user : 'root',
-    password : '',
-    database : 'products'
-  }
-});
+// var knex = require('knex')({
+//   client: 'mysql',
+//   connection: {
+//     host : '127.0.0.1',
+//     user : 'root',
+//     password : '',
+//     database : 'products'
+//   }
+// });
 
-knex.select('*').from('products').then( data => console.log(data))
+const knex = require('./configs/knex-config');
+
+knex.select('*').from('users').where({email: 'test@testr.com'}).then( data => console.log(data))
 
 
 //MONGO DB CONNECTION
@@ -54,7 +56,6 @@ app.use(session({
   secret: 'coolSecret', 
   saveUninitialized: false, 
   resave: false,
-  store: new MongoStore({ mongooseConnection: mongoose.connection, }),
   cookie: { maxAge: 180 * 60 * 1000 }
 }));
 app.use(flash());

@@ -1,15 +1,20 @@
 var passport = require('passport');
-var User = require('../models/user');
 const LocalStrategy = require('passport-local').Strategy;
+const knex = require('../configs/knex-config');
+const bcrypt = require('bcrypt-nodejs');
 
 passport.serializeUser((user, done) => {
+
     done(null, user.id);
 });
 
 passport.deserializeUser((id, done) => {
-    User.findById(id, (err, user) => {
-        done(err, user);
-    });
+    console.log('deserialize', id)
+    knex.select('*').from('users').where({id}).then( (data, err) => {
+        
+        done(err, data[0]);
+    })
+    
 });
 
 passport.use('local.signup', new LocalStrategy({
@@ -30,22 +35,29 @@ passport.use('local.signup', new LocalStrategy({
         return done(null, false, req.flash('error', messages))
     }
 
-    console.log('we are here bruv')
-    User.findOne({ email }, (err, user) => {
-        if(err)
-            return done(err);
-        if(user)
-            return done(null, false, {message:'Email is already taken'});
-        let newUser = new User();
-        newUser.email = email;
-        newUser.password = newUser.encryptPassword(password);
-        newUser.save((err, user) => {
+    console.log(email)
+    knex.select('*').from('users').where({email})
+        .then((user, err) => {
+            
             if(err)
                 return done(err);
-            return done(null, newUser);
+            if(user[0])
+                return done(null, false, {message:'Email is already taken'});
+            let newUser = {};
+            newUser.email = email;
+            newUser.password = encryptPassword(password);
+
+            knex('users').insert(newUser).then((user, err) => {
+               newUser.id = user[0];
+
+                if(err)
+                    return done(err);
+                return done(null, newUser);
+            });
+            
         });
-        
-    })
+    console.log('we are here bruv')
+    
 }))
 passport.use('local.signin', new LocalStrategy({
     usernameField: 'email',
@@ -65,15 +77,32 @@ passport.use('local.signin', new LocalStrategy({
         return done(null, false, req.flash('error', messages))
     }
 
-    console.log('we are here bruv')
-    User.findOne({ email }, (err, user) => {
-        if(err)
-            return done(err);
-        if(!user)
-            return done(null, false, {message:'User not Found'});
-        if(!user.validPassword(password))
-            return done(null, false, { message: 'Password is invalid' })
-        done(null, user);
-        
+    knex.select('*').from('users').where({email})
+        .then( (user, err) => {
+            let checkPass = user[0].password;
+
+            if(err)
+                return done(err);
+            if(!user)
+                return done(null, false, {message:'User not Found'});
+            if(!(validPassword(password, checkPass)))
+                return done(null, false, { message: 'Password is invalid' })
+
+            let newUser= {
+                id : user[0]['ID']
+            }
+            done(null, newUser);
+
     })
 }))
+
+
+
+//ENCRYPTION FUNCTIONS
+function encryptPassword(password){
+    return bcrypt.hashSync(password, bcrypt.genSaltSync(5), null);
+}
+
+function validPassword(password, checkPass){
+    return bcrypt.compareSync(password, checkPass);
+}
