@@ -30,18 +30,6 @@ router.get('/', function (req, res, next) {
       });
 
     })
-
-  // Product.find((err, docs) => {
-  //   let productChunk = [];
-  //   let chunkSize = 3;
-  //   for (let i = 0; i < docs.length; i += chunkSize) {
-  //     productChunk.push(docs.splice(i, i + chunkSize));
-  //   }
-  //   res.render('shop/index', {
-  //     title: 'Shopping Cart',
-  //     products: productChunk
-  //   });
-  // })
 });
 
 router.get('/add-to-cart/:id', (req, res, next) => {
@@ -58,14 +46,6 @@ router.get('/add-to-cart/:id', (req, res, next) => {
       console.log(req.session.cart);
       res.redirect('/');
     });
-  // Product.findById(productId, (err, product) => {
-  //   if (err)
-  //     return res.redirect('/');
-  //   cart.add(product, product.id);
-  //   req.session.cart = cart;
-  //   console.log(req.session.cart);
-  //   res.redirect('/');
-  // })
 });
 
 router.get('/shopping-cart', (req, res, next) => {
@@ -81,31 +61,31 @@ router.get('/shopping-cart', (req, res, next) => {
   });
 });
 
-router.post('/chat', (req, res) => {
-  let query = req.body.queryResult;
-  let {
-    action,
-    parameters
-  } = query;
+// router.post('/chat', (req, res) => {
+//   let query = req.body.queryResult; 
+//   let {
+//     action,
+//     parameters
+//   } = query;
 
-  switch (action) {
-    case 'product.search':
-      console.log("tees db")
-      console.log(parameters);
-      Product.findOne({
-          Name: {
-            $regex: new RegExp('' + parameters.product),
-            $options: 'i'
-          }
-        },
-        function (err, prod) {
-          if (err) return handleError(err);
-          console.log(prod)
-        });
-  }
-  console.log(req.body);
-  // res.redirect('/');
-});
+//   switch (action) {
+//     case 'product.search':
+//       console.log("tees db")
+//       console.log(parameters);
+//       Product.findOne({
+//           Name: {
+//             $regex: new RegExp('' + parameters.product),
+//             $options: 'i'
+//           }
+//         },
+//         function (err, prod) {
+//           if (err) return handleError(err);
+//           console.log(prod)
+//         });
+//   }
+//   console.log(req.body);
+//   // res.redirect('/');
+// });
 
 router.get('/chatbot', (req, res) => {
   res.render('user/chatbot');
@@ -121,23 +101,45 @@ router.get(`/chat/:text`, (req, res) => {
     headers: {
       Authorization: 'Bearer ' + token //the token is a variable which holds the token
     } 
-  }).then((res) => {
-    console.log(res.data.entities.productsearch)
-    console.log(req.session.id)
-    if(res.data.entitites){
-      let keyword = res.data.entities.productsearch.value;
-      
-    }
+  }).then((result) => {
+    console.log('entities', result.data.entities) 
+    let search = result.data.entities ? true : false;
+    // console.log(result.data.entities.productsearch)
+    // console.log(req.session.id)
+    console.log('search ', search)
 
-    
-    if (!res.data.entities) {
+    if(search) { 
+      let entity = result.data.entities;
+      let key = Object.keys(entity)[1];
+
+      switch(key){
+        case 'number':
+        let num = entity.number[0].value;
+        console.log('its a number: ', num);
+        console.log(req.session.productSearch[num-1]);
+          break;
+        case 'productsearch':
+          let keyword = entity.productsearch[0].value;
+          knex.select('*').from('products').where({ keyword })
+            .then((data, err) => {
+              // console.log('These are the top picks : ', data);
+              req.session.productSearch = data;
+              res.send(JSON.stringify(data));
+              console.log('Session id search : ',req.session.id)
+            })
+          break;
+        default:
+            console.log('its tunioniown');
+      }
+      // console.log('keyword', keyword)
+    } else {
       console.log('Im in ', text)
       var request = app.textRequest(text, {
         sessionId: req.session.id
       });
 
       request.on('response', function (response) {
-        console.log(response);
+        console.log('dialogdlow', response); 
       });
 
       request.on('error', function (error) {
