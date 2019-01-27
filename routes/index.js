@@ -34,19 +34,10 @@ router.get('/', function (req, res, next) {
 
 router.get('/add-to-cart/:id', (req, res, next) => {
   let productId = req.params.id;
-  let cart = new Cart(req.session.cart ? req.session.cart : {});
-
-  knex.select('*').from('products').where({ ProductID: productId })
-    .then( (data, err) => {
-      let product = data[0];
-      if (err)
-        return res.redirect('/');
-      cart.add(product, product['ProductID']);
-      req.session.cart = cart;
-      console.log(req.session.cart);
-      res.redirect('/');
-    });
+  addToCart(productId, req, function(){ res.redirect('/')});
 });
+
+
 
 router.get('/shopping-cart', (req, res, next) => {
   if (!req.session.cart)
@@ -94,7 +85,7 @@ router.get('/chatbot', (req, res) => {
 
 // let text = "i want to buy rice";
 let token = 'NB7ZCS6F7ZLFBM2HCWZYNYBNJ3D5IPDJ'
-router.get(`/chat/:text`, (req, res) => {
+router.get(`/chats/:text`, (req, res) => {
   let text = req.params.text;
   req.header('Authorization: Bearer' + token)
   axios.get('https://api.wit.ai/message?v=20190109&q=' + text, {
@@ -152,5 +143,170 @@ router.get(`/chat/:text`, (req, res) => {
   })
 
 });
+
+
+router.get(`/chat/:text`, (req, res) => {
+  let text = req.params.text;
+  let resText = {speech: null, product: null, cart: null};
+  req.header('Authorization: Bearer' + token)
+  var request = app.textRequest(text, {
+    sessionId: req.session.id
+  });
+
+  request.on('response', async function (response) {
+    console.log('dialogflow', response); 
+    let action = response.result.action;
+    console.log(action)
+    switch(action){
+      case 'item.add': {
+        console.log('Item is being added ....\n')
+        let result;
+        try{
+          result = await getWit(text, token);
+        }catch(err){
+          console.log(err)
+        }
+        let entity = result.data.entities;
+        let num = entity.number[0].value;
+        console.log('its a number: ', num);
+        try{
+          product = req.session.productSearch[num-1];
+
+        }catch(e){
+          resText.speech = 'Item was not found';
+          res.json(resText);
+
+        }
+        resText.speech = 'Item has been added to cart';
+        addToCart(product['ProductID'], req, () => res.json(resText));
+        
+
+      } break;
+
+      case 'product.search': {
+
+          console.log('product is searchin ....\n')
+          let result;
+          try{
+             result = await getWit(text, token);
+          }catch(err){
+            console.log(err)
+          }
+          let entity = result.data.entities;
+          let keyword = entity.productsearch[0].value;
+          console.log(entity)
+
+          knex.select('*').from('products').where({ keyword })
+            .then((data, err) => {
+              console.log(err || !data)
+              console.log(data)
+              if(err || !data[0]){
+                resText.speech = 'Item was not found';
+                res.json(resText);
+              }else{
+                
+                console.log('These are the top picks : ', data);
+                req.session.productSearch = data;
+                resText.product = data;
+                res.json(resText);
+                console.log('Session id search : ',req.session.id)
+              }
+            })
+        } break;
+
+      case 'cart.check': {
+        if(req.session.cart)
+          resText.cart = req.session.cart;
+        else
+          resText.speech = 'Cart is empty.'
+        res.json(resText);
+        console.log(req.session.cart)
+      } break;
+
+      case 'item.remove':{
+        let result;
+        try{
+           result = await getWit(text, token);
+        }catch(err){
+          console.log(err)
+        }
+
+        let entity = result.data.entities;
+        let number = entity.number[0].value;
+        
+        let cart = new Cart(req.session.cart);
+
+        let cartArr = cart.generateArray();
+        
+        let id = cartArr[number - 1].item.ProductID
+        if(id){
+            cart.remove(id);
+            req.session.cart = cart;
+            console.log(req.session.cart);
+            resText.cart = cart;
+            resText.speech = `Item ${number} has been removed from cart`;
+            res.json(resText);
+        }else{
+            resText.speech = `Item was not found`;
+            res.json(resText)
+        }
+
+        
+
+      }break;
+      default:
+          resText.speech = response.result.fulfillment.speech;
+          console.log("res speech: ", resText)
+          res.json(resText);
+    }
+
+
+  });
+
+  request.on('error', function (error) {
+    console.log(error);
+  });
+
+  request.end();
+
+})
+
+
+async function getWit(text, token){
+  let result = axios.get('https://api.wit.ai/message?v=20190109&q=' + text, {
+    headers: {
+      Authorization: 'Bearer ' + token //the token is a variable which holds the token
+    } 
+  })
+  return await result;
+}
+
+function addToCart(id, req, cb){
+  let cart = new Cart(req.session.cart ? req.session.cart : {});
+
+  knex.select('*').from('products').where({ ProductID: id })
+  .then( (data, err) => {
+    let product = data[0];
+    if (err)
+      return err;
+    cart.add(product, product['ProductID']);
+    req.session.cart = cart;
+    console.log(req.session.cart);
+    cb();
+    return data;
+  });
+
+}
+
+function removeCart(id, req){
+  
+
+}
+
+
+
+
+
+
 
 module.exports = router;

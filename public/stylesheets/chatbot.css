@@ -103,3 +103,40 @@
   overflow-y: scroll;
   background-color: lightblue;
 }
+
+.products{
+  border: 2px solid #dedede;
+  background-color: #f1f1f1;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+
+
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.product{
+  text-align: center;
+}
+
+.product > img{
+  height: 100px;
+}
+
+.cart{
+  border: 2px solid #dedede;
+  background-color: #f1f1f1;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+
+  display: flex;
+  justify-content: space-evenly;
+}
+
+
+.cart-item > .det{
+  display: flex;
+  justify-content: space-between;
+}

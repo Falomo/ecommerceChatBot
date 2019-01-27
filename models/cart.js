@@ -17,6 +17,16 @@ module.exports = function(oldCart){
 
     };
 
+    this.remove = function(id){
+        let deleteItem = this.items[id];
+        if(deleteItem)
+            delete this.items[id];
+        
+        this.totalQty = this.totalQty - deleteItem.qty;
+        this.totalPrice -= deleteItem.price;
+        console.log(this.items)
+    }
+
     this.generateArray = function(){
         let arr = [];
         for(var id in this.items){
