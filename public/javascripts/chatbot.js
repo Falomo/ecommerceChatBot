@@ -2,6 +2,13 @@
 
 let chatContainer = document.querySelector('.chat-history');
 window.SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+const recognition = new SpeechRecognition();
+recognition.onresult = (event) => {
+    const speechToText = event.results[0][0].transcript;
+    console.log(speechToText)
+    document.querySelector('#message').value = speechToText;
+    submitSpeech();
+}
 
 var synth = window.speechSynthesis;
 
@@ -105,55 +112,91 @@ function botSpeak(msg, cb){
 
 }
 
-$('#submit').click(() =>{
-    let message = document.querySelector('#message').value;
-    addUserChat(message);
+function productSpeak(product){
+    console.log(product)
+    botSpeak('These are the top picks for '+ product.Keyword + '.', function(){
+        product.forEach((product, i) => {
+            botSpeak(`Item ${i+1}, Name: ${product.Name}, price: ${product.Price} Naira`)
+        })
+     })
+}
+function cartSpeak(cart){
+    botSpeak('These are the items currently in your cart', function(){
 
-    // $.get("/chat/"+message, function(data, status, xhr){
-    //     setHeader(xhr);
-    //     alert("Data: " + data + "\nStatus: " + status);
-    //   });
-
-      $.ajax({url: "/chat/"+message,
-      xhrFields: {
-        withCredentials: true
-     }
-      ,
-      success: function(result){
-        for(name in result){
-            let chatResponse = result[name];
-            if(chatResponse){
-                switch(name){
-                    case 'speech':
-                        addBotChat(result[name])
-                        botSpeak(result[name])
-                        break;
-                    case 'product':
-                        addProductChat(chatResponse);
-                        console.log(chatResponse)
-                        break;
-                    case 'cart':
-                        addCartChat(chatResponse);
-                        break;
-
-
-                }
-
-            }
+        // let cart = {"items":{"3":{"item":{"ProductID":3,"Name":"Television","Desc":"This is a very cool tv","Price":200,"ImagePath":"/images/image2.jpg","Keyword":"television"},"qty":1,"price":200}},"totalQty":1,"totalPrice":200}
+        let {items} = cart;
+        console.log(items);
+        let count = 0;
+        for(index in items){
+            let item = items[index] 
+            botSpeak(`Item ${++count} , Name: ${item.item.Name}, price: ${item.price} Naira, quantity: ${item.qty}`);
         }
-      }});
+        botSpeak(`Total price is ${cart.totalPrice} Naira`)
+      
+    })
+}
 
-    //   fetch("/chat/"+message, {
-    //     credentials: 'include'
-    // }).then((response) => {
-    //     if (response.status >= 400) {
-    //         console.log(response.status);
-    //     }
-    //     return response.json();
-    // }).then((json) => {
-    //     console.log(json); 
-    //     //do something
-    // });
+$('#submit').click(submitSpeech)
+
+function submitSpeech(){
+   
+        let message = document.querySelector('#message').value;
+        addUserChat(message);
+    
+        // $.get("/chat/"+message, function(data, status, xhr){
+        //     setHeader(xhr);
+        //     alert("Data: " + data + "\nStatus: " + status);
+        //   });
+    
+          $.ajax({url: "/chat/"+message,
+          xhrFields: {
+            withCredentials: true
+         }
+          ,
+          success: function(result){
+            for(name in result){
+                let chatResponse = result[name];
+                if(chatResponse){
+                    switch(name){
+                        case 'speech':
+                            addBotChat(result[name])
+                            botSpeak(result[name])
+                            break;
+                        case 'product':
+                            addProductChat(chatResponse);
+                            productSpeak(chatResponse)
+                            console.log(chatResponse)
+                            break;
+                        case 'cart':
+                            addCartChat(chatResponse);
+                            cartSpeak(chatResponse)
+                            break;
+    
+    
+                    }
+    
+                }
+            }
+          }});
+        
+    
+        //   fetch("/chat/"+message, {
+        //     credentials: 'include'
+        // }).then((response) => {
+        //     if (response.status >= 400) {
+        //         console.log(response.status);
+        //     }
+        //     return response.json();
+        // }).then((json) => {
+        //     console.log(json); 
+        //     //do something
+        // });
+    }
+
+
+$('#voice').click(() => {
+
+    recognition.start();
 })
 
 

@@ -13,6 +13,10 @@ const knex = require('../configs/knex-config');
 
 const app = apiai("7624ecc172844ed8986d4d575fe7fe62");
 
+const { convertArrayToCSV } = require('convert-array-to-csv');
+const converter = require('convert-array-to-csv');
+const fs = require('fs');
+
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -269,6 +273,39 @@ router.get(`/chat/:text`, (req, res) => {
 
   request.end();
 
+});
+
+router.get('/train_recommend', (req, res) => {
+  let keyword = ""; 
+  knex.column({customerId: 'ID'}, {products: 'Products'}).select().from('orders')
+    .then((data, err) => {
+
+      console.log(data)
+  // knex.select('*').from('products').where({ keyword })
+      const csv_data = convertArrayToCSV(data);
+      
+      fs.writeFile('python_server/data/trx_data.csv', csv_data, function(err, data){
+          if (err) console.log(err);
+          console.log("Successfully Written to File.");
+      })
+
+      
+    });
+  knex.column({customerId: 'ID'}).select().from('users')
+    .then((data, err) => {
+
+      console.log(data)
+  // knex.select('*').from('products').where({ keyword })
+      const csv_data = convertArrayToCSV(data);
+      
+      fs.writeFile('python_server/data/recommend_1.csv', csv_data, function(err, data){
+          if (err) console.log(err);
+          console.log("Successfully Written to File.");
+      })
+
+
+    });
+  res.render('user/chatbot');
 })
 
 
