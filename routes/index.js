@@ -170,7 +170,7 @@ router.get(`/chat/:text`, (req, res) => {
         }catch(err){
           console.log(err)
         }
-        let entity = result.data.entities;
+        let entity = result.data.entities; 
         let num = entity.number[0].value;
         console.log('its a number: ', num);
         try{
@@ -306,7 +306,16 @@ router.get('/train_recommend', (req, res) => {
 
     });
   res.render('user/chatbot');
+});
+
+router.get('/recommend/:id', async (req, res) => {
+  let recommendations = await getRecommendations(req.params.id);
+  console.log(recommendations)
+  getProductRecommend(recommendations.data.result)
+  res.json(recommendations.data)
+
 })
+
 
 
 async function getWit(text, token){
@@ -335,9 +344,28 @@ function addToCart(id, req, cb){
 
 }
 
-function removeCart(id, req){
-  
+async function getRecommendations(id){
+  let result;
+  try {
 
+  result =  axios.get('http://localhost:5000/recommend/' + id);
+    
+  }catch(e){
+    console.log(e)
+  }
+  return await result;
+}
+
+async function getProductRecommend(list){
+  let products = [];
+  let productsId = list.split("|");  
+  for(let index = 0; index < productsId.length; index++){
+    let data = await knex('products').where('ProductID', productsId[index])
+    products.push(data[0]);
+
+  }
+  console.log(products)
+  return products;
 }
 
 

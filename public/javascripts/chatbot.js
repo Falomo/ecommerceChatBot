@@ -114,7 +114,7 @@ function botSpeak(msg, cb){
 
 function productSpeak(product){
     console.log(product)
-    botSpeak('These are the top picks for '+ product.Keyword + '.', function(){
+    botSpeak('These are the top picks for '+ product[0].Keyword + '.', function(){
         product.forEach((product, i) => {
             botSpeak(`Item ${i+1}, Name: ${product.Name}, price: ${product.Price} Naira`)
         })

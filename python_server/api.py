@@ -154,13 +154,14 @@ def recommendItem(num):
 
     print(recommendations.index)
     def customer_recomendation(customer_id):
-        if customer_id not in recommendations.index:
-            print('Customer not found.')
-            return customer_id
-        return recommendations.loc[customer_id]
+        # if recommendations['customerId'] != customer_id:
+        #     print('Customer not found.')
+        #     return customer_id
+        print(recommendations[recommendations['customerId'] == customer_id]['recommendedProducts'])
+        return recommendations[recommendations['customerId'] == customer_id].iloc[0]['recommendedProducts']
 
     print(customer_recomendation(num))
-    return "hello" 
+    return jsonify({ "result": customer_recomendation(num)})
 
 if __name__ == '__main__':
     app.run(debug=True)
